@@ -65,6 +65,7 @@ func main() {
 	waiter.Wait()
 
 	fmt.Printf("\nCorrect answers: %d. Total questions: %d.\n", res.correct, res.total)
+	f.Close()
 }
 
 func askQuestion(quizRecord []string, stats *results) {

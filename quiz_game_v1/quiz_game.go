@@ -40,6 +40,7 @@ func main() {
 		askQuestion(record, &res)
 	}
 	fmt.Printf("Correct answers: %d. Total questions: %d.\n", res.correct, res.total)
+	f.Close()
 }
 
 func askQuestion(quizRecord []string, stats *results) {
