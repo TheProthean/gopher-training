@@ -1,7 +1,9 @@
 package urlshort
 
 import (
+	sql "database/sql"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 )
@@ -65,4 +67,25 @@ func parseYaml(yml []byte) (map[string]string, error) {
 		parsedYaml[strings.TrimSpace(lines[0])] = strings.TrimSpace(lines[1])
 	}
 	return parsedYaml, nil
+}
+
+//DatabaseHandler is the same as MapHandler, with exception that he reads from database
+func DatabaseHandler(db *sql.DB, fallback http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println(r.URL.Path)
+		answer, err := (*db).Query("SELECT url FROM path_to_url WHERE path = $1;", r.URL.Path)
+		defer answer.Close()
+		if err != nil {
+			fmt.Println("Error reading data from database.", err)
+			fallback.ServeHTTP(w, r)
+			return
+		}
+		if answer.Next() {
+			var url string
+			answer.Scan(&url)
+			http.Redirect(w, r, url, http.StatusFound)
+		} else {
+			fallback.ServeHTTP(w, r)
+		}
+	}
 }
