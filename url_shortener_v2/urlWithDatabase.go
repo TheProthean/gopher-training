@@ -37,6 +37,7 @@ func main() {
 	//Values should be imported from csv file.
 	connStr := "dbname=url_shortener_database user=postgres password=postgres"
 	dbConnection, err := sql.Open("postgres", connStr)
+	defer dbConnection.Close()
 	if err != nil {
 		fmt.Println("Error opening database.", err)
 	}

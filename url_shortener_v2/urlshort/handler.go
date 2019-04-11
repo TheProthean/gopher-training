@@ -74,6 +74,7 @@ func DatabaseHandler(db *sql.DB, fallback http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(r.URL.Path)
 		answer, err := (*db).Query("SELECT url FROM path_to_url WHERE path = $1;", r.URL.Path)
+		defer answer.Close()
 		if err != nil {
 			fmt.Println("Error reading data from database.", err)
 			fallback.ServeHTTP(w, r)
