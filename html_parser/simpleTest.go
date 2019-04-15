@@ -9,8 +9,16 @@ import (
 )
 
 func main() {
-	file, _ := os.Open("test1.html")
+	file, err := os.Open("test1.html")
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer file.Close()
 	reader := bufio.NewReader(file)
-	answer, _ := hP.ParseHTMLFromSource(reader)
-	fmt.Print(answer)
+	answer, err := hP.ParseHTMLFromSource(reader)
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Print(answer)
+	}
 }
