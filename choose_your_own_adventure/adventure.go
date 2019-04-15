@@ -1,23 +1,26 @@
 package main
 
 import (
-	"os"
+	"flag"
 	"fmt"
-	"http/template"
-	"encoding/json"
-	"github.com/gopher-training/choose_your_own_adventure"
+	"log"
+	"net/http"
+	"os"
 
+	"github.com/gopher-training/choose_your_own_adventure/jsonParser"
+	"github.com/gopher-training/choose_your_own_adventure/storyHandler"
 )
 
 func main() {
-	fileJSON, err := os.Open("cyoa.json")
-	arcStories := make([]ArcStory)
+	port := flag.Int("p", 4040, "Port, where the story starts...")
+	fileName := flag.String("file", "gopher.json", "File, where the stories are located")
+	arcStoriesArray, err := jsonParser.ParseArcStories(*fileName)
 	if err != nil {
-		fmt.Println("Error opening JSON file.")
+		fmt.Println("Error occured while parsing json file: ", err)
 		os.Exit(1)
 	}
-	jsonReader := json.NewDecoder(bufio.NewReader(fileJSON))
-	
 
-	fileJSON.Close()
+	sHandler := storyHandler.StoryHandler(arcStoriesArray)
+	fmt.Printf("Go to :%d to start your adventure!\n", *port)
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *port), sHandler))
 }
