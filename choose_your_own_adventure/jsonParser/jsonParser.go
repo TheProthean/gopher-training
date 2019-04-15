@@ -18,9 +18,6 @@ func ParseArcStories(fileName string) (map[string]structs.ArcStory, error) {
 	defer fileJSON.Close()
 
 	var arcStories = make(map[string]structs.ArcStory)
-	if err != nil {
-		return nil, err
-	}
 	jsonReader := json.NewDecoder(bufio.NewReader(fileJSON))
 	jsonReader.Token()
 
