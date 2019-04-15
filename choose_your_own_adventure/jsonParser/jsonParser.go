@@ -12,6 +12,9 @@ import (
 //ParseArcStories parses our json file containing arc stories into a slice of structs.ArcStory
 func ParseArcStories(fileName string) (map[string]structs.ArcStory, error) {
 	fileJSON, err := os.Open("gopher.json")
+	if err != nil {
+		return nil, err
+	}
 	defer fileJSON.Close()
 
 	var arcStories = make(map[string]structs.ArcStory)
@@ -26,15 +29,16 @@ func ParseArcStories(fileName string) (map[string]structs.ArcStory, error) {
 		tokenName, err := jsonReader.Token()
 		if err == io.EOF {
 			break
-		} else if err != nil {
+		}
+		if err != nil {
 			return nil, err
-		} else if name, ok := tokenName.(string); ok {
+		}
+		if name, ok := tokenName.(string); ok {
 			arcStory.Name = name
 		} else {
 			break
 		}
-		err = jsonReader.Decode(&arcStory.ArcData)
-		if err != nil {
+		if err := jsonReader.Decode(&arcStory.ArcData); err != nil {
 			return nil, err
 		}
 		arcStories[arcStory.Name] = arcStory
