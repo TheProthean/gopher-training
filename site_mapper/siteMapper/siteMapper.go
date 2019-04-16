@@ -12,11 +12,16 @@ import (
 
 type node struct {
 	URL       string `xml:"loc"`
-	Depth     int    `xml:"depth"`
+	Depth     int
 	Available []node `xml:"url"`
 }
 
-func mapSite(siteName string) (node, error) {
+type urlset struct {
+	CoreNode node   `xml:"url"`
+	Xmlns    string `xml:"xmlns,attr"`
+}
+
+func mapSite(siteName string, maxDepth int) (node, error) {
 	allSites := make(map[string]bool)
 	coreNode := node{
 		URL:       siteName,
@@ -27,6 +32,9 @@ func mapSite(siteName string) (node, error) {
 	queue := []node{coreNode}
 	for len(queue) > 0 {
 		currentNode := queue[0]
+		if currentNode.Depth > maxDepth {
+			break
+		}
 		localSites := make(map[string]bool)
 		fmt.Printf("Current node: %+v\n", currentNode)
 		queue = queue[1:]
@@ -41,12 +49,12 @@ func mapSite(siteName string) (node, error) {
 			return node{}, err
 		}
 		for _, v := range references {
-			fmt.Println("Starting new iteration")
+			fmt.Printf("Starting new iteration: %s\n", v.Reference)
 			var newNodeURL string
 			if v.Reference[0] == '#' || len(v.Reference) == 0 || (len(v.Reference) == 1 && v.Reference[0] == '/') {
 				continue
 			}
-			if v.Reference[0] == '/' && v.Reference[1] != '/' {
+			if !strings.Contains(v.Reference, "http://") && !strings.Contains(v.Reference, "https://") && !(v.Reference[:2] == "//") {
 				newNodeURL = siteName + v.Reference
 			} else {
 				mainDomain := strings.Split(siteName, "/")[2]
@@ -62,9 +70,10 @@ func mapSite(siteName string) (node, error) {
 				Depth:     currentNode.Depth + 1,
 				Available: []node{},
 			}
-			fmt.Printf("\tFound node: %+v\n", newNode)
 			if _, found := localSites[newNodeURL]; !found {
+				fmt.Printf("\tFound node: %+v\n", newNode)
 				currentNode.Available = append(currentNode.Available, newNode)
+				fmt.Printf("\t%v", currentNode.Available)
 				localSites[newNodeURL] = true
 			}
 			if _, found := allSites[newNodeURL]; !found {
@@ -77,14 +86,22 @@ func mapSite(siteName string) (node, error) {
 }
 
 //PrintSiteMap prints site map in XML format on standart output
-func PrintSiteMap(siteName string) error {
-	coreNode, err := mapSite(siteName)
+func PrintSiteMap(siteName string, maxDepth int) error {
+	coreNode, err := mapSite(siteName, maxDepth)
+	fmt.Println(coreNode)
 	if err != nil {
 		return err
 	}
 	enc := xml.NewEncoder(os.Stdout)
-	if err := enc.EncodeElement(coreNode, xml.StartElement{Name: xml.Name{Local: "url"}}); err != nil {
+	fmt.Print(xml.Header)
+	enc.Indent("", "  ")
+	mainStruct := urlset{
+		CoreNode: coreNode,
+		Xmlns:    "http://www.sitemaps.org/schemas/sitemap/0.9",
+	}
+	if err := enc.Encode(mainStruct); err != nil {
 		return err
 	}
+	fmt.Println()
 	return nil
 }
