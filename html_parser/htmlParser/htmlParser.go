@@ -35,10 +35,10 @@ func findHrefs(found []HTMLhrefEntries, foundHref string, htmlReader *html.Token
 			}
 			return nil, htmlReader.Err()
 		case html.StartTagToken:
-			tn, _ := htmlReader.TagName()
-			if len(tn) == 1 && tn[0] == 'a' {
+			tn, hasAttr := htmlReader.TagName()
+			if len(tn) == 1 && tn[0] == 'a' && hasAttr {
 				next := true
-				for k, v, ok := htmlReader.TagAttr(); next; {
+				for k, v, ok := htmlReader.TagAttr(); next; k, v, ok = htmlReader.TagAttr() {
 					if string(k) == "href" {
 						foundNew, err := findHrefs(found, string(v), htmlReader)
 						found = foundNew
