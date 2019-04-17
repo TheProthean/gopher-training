@@ -71,7 +71,7 @@ type handler struct {
 	s map[string]structs.ArcStory
 }
 
-//StoryHandler provides us a Handler interface to use our html templates
+//StoryHandler provides us a Handler interface to put our story on some socket
 func StoryHandler(s map[string]structs.ArcStory) http.Handler {
 	return handler{s}
 }
