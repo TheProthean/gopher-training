@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	urlflag := flag.String("url", "http://go-database-sql.org", "URL of site, that will be mapped")
+	urlflag := flag.String("url", "http://gophercises.com", "URL of site, that will be mapped")
 	depthflag := flag.Int("depth", 3, "Maximum mapping depth")
 	var newURL string
 	if (*urlflag)[len(*urlflag)-1] == '/' {
