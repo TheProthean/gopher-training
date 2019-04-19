@@ -6,7 +6,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// listCmd represents the list command
 var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "Show all tasks on TODO list.",
@@ -19,7 +18,6 @@ var listCmd = &cobra.Command{
 		}
 		defer rows.Close()
 		fmt.Println("List of all incompleted tasks:")
-		//fmt.Println("No incompleted tasks.")
 		for i := 1; rows.Next(); i++ {
 			var task string
 			err := rows.Scan(&task)
