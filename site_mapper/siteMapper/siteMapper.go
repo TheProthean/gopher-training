@@ -36,21 +36,21 @@ func mapSite(siteName string, maxDepth int) (*node, error) {
 			break
 		}
 		queue = queue[1:]
-		responce, err := http.Get(currentNode.URL)
+		response, err := http.Get(currentNode.URL)
 		if err != nil {
 			return nil, err
 		}
-		defer responce.Body.Close()
-		references, err := htmlParser.ParseHTMLFromSource(responce.Body)
+		defer response.Body.Close()
+		references, err := htmlParser.ParseHTMLFromSource(response.Body)
 		if err != nil {
 			return nil, err
 		}
 		for _, v := range references {
 			var newNodeURL string
-			if v.Reference[0] == '#' || len(v.Reference) == 0 || (len(v.Reference) == 1 && v.Reference[0] == '/') {
+			if isReferenceToSamePage(v.Reference) {
 				continue
 			}
-			if !strings.Contains(v.Reference, "http://") && !strings.Contains(v.Reference, "https://") && !(v.Reference[:2] == "//") {
+			if isShortReference(v.Reference) {
 				newNodeURL = siteName + v.Reference
 			} else {
 				mainDomain := strings.Split(siteName, "/")[2]
@@ -94,4 +94,12 @@ func PrintSiteMap(siteName string, maxDepth int) error {
 	}
 	fmt.Println()
 	return nil
+}
+
+func isReferenceToSamePage(reference string) bool {
+	return reference[0] == '#' || len(reference) == 0 || (len(reference) == 1 && reference[0] == '/')
+}
+
+func isShortReference(reference string) bool {
+	return !strings.Contains(reference, "http://") && !strings.Contains(reference, "https://") && !(reference[:2] == "//")
 }
