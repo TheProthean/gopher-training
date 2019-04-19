@@ -1,4 +1,4 @@
-package database
+package dbCLI
 
 import (
 	"database/sql"
@@ -13,7 +13,8 @@ var db *sql.DB
 
 func initDB() {
 	connStr := "dbname=TODO_database user=postgres password=postgres"
-	db, err := sql.Open("postgres", connStr)
+	tmpDB, err := sql.Open("postgres", connStr)
+	db = tmpDB
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
