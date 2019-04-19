@@ -11,20 +11,30 @@ var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "Show all tasks on TODO list.",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("list called")
+		rows, err := db.Query(`SELECT task FROM task_table
+							   WHERE is_done = FALSE;`)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		defer rows.Close()
+		fmt.Println("List of all incompleted tasks:")
+		//fmt.Println("No incompleted tasks.")
+		for i := 1; rows.Next(); i++ {
+			var task string
+			err := rows.Scan(&task)
+			if err != nil {
+				fmt.Println(err)
+				break
+			}
+			fmt.Printf("\t%d %s\n", i, task)
+		}
+		if err := rows.Err(); err != nil {
+			fmt.Println(err)
+		}
 	},
 }
 
 func init() {
 	RootCmd.AddCommand(listCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// listCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// listCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
