@@ -29,7 +29,7 @@ func playRound(playingDeck []deck.Card) {
 	fmt.Println("New round.")
 	var card deck.Card
 	dealerCards := make([]deck.Card, 2)
-	playerCards := []deck.Card{}
+	playerCards := make([]deck.Card, 2)
 	for i := 0; i < 2; i++ {
 		playingDeck, card = deck.PullRandomCard(playingDeck)
 		dealerCards[i] = card
