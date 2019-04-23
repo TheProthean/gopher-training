@@ -1,9 +1,11 @@
 package deck
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"sort"
+	"time"
 )
 
 //Value is separated from int for better API
@@ -67,6 +69,10 @@ var suitNamesMap = map[Suit]string{
 	DIAMONDS: "Diamonds", SPADES: "Spades",
 }
 
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
+
 //Card is a main type for our deck package that represends a playing card
 type Card struct {
 	Value Value
@@ -128,4 +134,29 @@ func New(args NewArguments) []Card {
 		sort.SliceStable(deck, args.SortingFunc)
 	}
 	return deck
+}
+
+//PullRandomCard pulls one card from deck. Returns updated deck and pulled card
+func PullRandomCard(deck []Card) ([]Card, Card) {
+	cardNum := rand.Intn(len(deck) - 1)
+	pulledCard := deck[cardNum]
+	updatedDeck := make([]Card, len(deck)-1)
+	copy(updatedDeck, deck[:cardNum])
+	copy(updatedDeck[cardNum:], deck[cardNum+1:])
+	return updatedDeck, pulledCard
+}
+
+/*PutCardBackInDeck puts card back into deck, checking that this card is not in the deck already
+Jokers though won't be put in the deck anyway, even if there is no jokers in the deck.*/
+func PutCardBackInDeck(deck []Card, card Card) ([]Card, error) {
+	if card.Value == JOKER {
+		return deck, errors.New("Can't put jokers in the deck. Create new deck if you want to use jokers.")
+	}
+	for _, v := range deck {
+		if v == card {
+			return deck, errors.New("This card is already in the deck")
+		}
+	}
+	deck = append(deck, card)
+	return deck, nil
 }
