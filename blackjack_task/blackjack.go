@@ -73,7 +73,7 @@ func countScore(hand []deck.Card) int {
 			continue
 		}
 		if v.Value < deck.JACK {
-			score += int(v.Value)
+			score += int(v.Value) + 1
 			continue
 		}
 		if v.Value >= deck.JACK {
