@@ -1,5 +1,10 @@
 package deck
 
+import (
+	"math/rand"
+	"sort"
+)
+
 //Value is separated from int for better API
 type Value int
 
@@ -54,23 +59,54 @@ type Card struct {
 	Suit  Suit
 }
 
-//NewArguments is a struct to use as optional arguments container in our New function
+/*NewArguments is a struct to use as optional arguments container in our New function
+Be aware, that Shuffle argument overrides SortingFunc argument*/
 type NewArguments struct {
-	SortingFunc func(i, j Card) bool
-	//WARNING: shuffle overrides all other sorting arguments
-	Shuffle     bool
-	AddJokers   int
-	Filter      []Value
+	//Function that defines order of cards in new deck
+	SortingFunc func(i, j int) bool
+	/*Flag that defines, will the order of cards be random or not
+	WARNING: shuffle overrides all other sorting arguments*/
+	Shuffle bool
+	/*Amount of Jokers to add to new deck.
+	Jokers are added with Suit property in exactly same order suits are in default deck*/
+	AddJokers int
+	//This argument defines cards, values of which we don't want to see in new deck
+	Filter map[Value]struct{}
+	//This argument defines how much usual decks should new deck contain
 	DecksNumber int
 }
 
-//New is our function for creating new deck of playing cards
+/*New is our function for creating new deck of playing cards
+By default it is sorted in order: Suits - Hearts, Clubs, Diamonds, Spades
+								  Values - Ace, 2, 3, 4, 5, 6, 7, 8, 9, 10, Jack, Queen, King*/
 func New(args NewArguments) []Card {
-	deck := make([]Card, 52, 52)
-	for i := HEARTS; i <= SPADES; i++ {
-		for j := ACE; j <= KING; j++ {
-			deck[int(i)*13+int(j)] = Card{Value: j, Suit: i}
+	deck := []Card{}
+	if args.DecksNumber == 0 {
+		args.DecksNumber = 1
+	}
+	for k := 0; k < args.DecksNumber; k++ {
+		for i := HEARTS; i <= SPADES; i++ {
+			for j := ACE; j <= KING; j++ {
+				newCard := Card{Value: j, Suit: i}
+				if _, in := args.Filter[newCard.Value]; !in {
+					deck = append(deck, newCard)
+				}
+			}
 		}
+	}
+	if args.AddJokers != 0 {
+		for k := 0; k < args.AddJokers; k++ {
+			deck = append(deck, Card{Value: JOKER, Suit: Suit(k % 4)})
+		}
+	}
+	if args.Shuffle {
+		rand.Shuffle(len(deck), func(i, j int) {
+			deck[i], deck[j] = deck[j], deck[i]
+		})
+		return deck
+	}
+	if args.SortingFunc != nil {
+		sort.SliceStable(deck, args.SortingFunc)
 	}
 	return deck
 }

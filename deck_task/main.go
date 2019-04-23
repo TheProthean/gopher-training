@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	some := deck.NewArguments{DecksNumber: 1}
+	some := deck.NewArguments{Shuffle: true, AddJokers: 2, Filter: map[deck.Value]struct{}{deck.TWO: {}}, DecksNumber: 2}
 	fmt.Println(some)
 	deck := deck.New(some)
 	for _, v := range deck {
