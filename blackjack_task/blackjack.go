@@ -16,9 +16,9 @@ func playGame(playingDeck []deck.Card) {
 	for playing {
 		playRound(playingDeck)
 		fmt.Println("Hit \"y\", if you want another round.")
-		var answer rune
-		fmt.Scanf("%c", &answer)
-		if answer != 'y' {
+		var answer string
+		fmt.Scanf("%s", &answer)
+		if answer[0] != byte('y') {
 			fmt.Println("Closing...")
 			playing = false
 		}
@@ -99,9 +99,9 @@ func playerTurn(playingDeck []deck.Card, playerCards []deck.Card) ([]deck.Card, 
 	var card deck.Card
 	for hitting {
 		fmt.Printf("Your current score is %d. Do you want to hit or stand?(h/s): ", countScore(playerCards))
-		var answer rune
-		fmt.Scanf("%c", &answer)
-		switch answer {
+		var answer string
+		fmt.Scanf("%s", &answer)
+		switch answer[0] {
 		case 'h':
 			playingDeck, card = deck.PullRandomCard(playingDeck)
 			fmt.Printf("You got %s\n", card.ToStringRepresentation())
