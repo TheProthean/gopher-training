@@ -11,6 +11,6 @@ func main() {
 	fmt.Println(some)
 	deck := deck.New(some)
 	for _, v := range deck {
-		fmt.Println(v)
+		fmt.Println(v.ToStringRepresentation())
 	}
 }

@@ -1,6 +1,7 @@
 package deck
 
 import (
+	"fmt"
 	"math/rand"
 	"sort"
 )
@@ -53,10 +54,28 @@ const (
 	SPADES = iota
 )
 
+var valueNamesMap = map[Value]string{
+	ACE: "Ace", TWO: "2", THREE: "3",
+	FOUR: "4", FIVE: "5", SIX: "6",
+	SEVEN: "7", EIGHT: "8", NINE: "9",
+	TEN: "10", JACK: "Jack", QUEEN: "Queen",
+	KING: "King", JOKER: "Joker",
+}
+
+var suitNamesMap = map[Suit]string{
+	HEARTS: "Hearts", CLUBS: "Clubs",
+	DIAMONDS: "Diamonds", SPADES: "Spades",
+}
+
 //Card is a main type for our deck package that represends a playing card
 type Card struct {
 	Value Value
 	Suit  Suit
+}
+
+//ToStringRepresentation is a function to convert our Card type to human-readable condition
+func (c Card) ToStringRepresentation() string {
+	return fmt.Sprintf("%s of %s", valueNamesMap[c.Value], suitNamesMap[c.Suit])
 }
 
 /*NewArguments is a struct to use as optional arguments container in our New function
