@@ -58,7 +58,7 @@ func playRound(playingDeck []deck.Card) {
 		fmt.Println("You won.")
 		return
 	}
-	if playerScore < dealerScore {
+	if playerScore == dealerScore {
 		fmt.Println("That's a draw.")
 		return
 	}
@@ -110,6 +110,7 @@ func playerTurn(playingDeck []deck.Card, playerCards []deck.Card) ([]deck.Card, 
 			if newScore > 21 {
 				fmt.Printf("You overdraw. Your score(%d) is more than 21.\n", newScore)
 				overdraw = true
+				return playingDeck, playerCards, overdraw
 			} else {
 				fmt.Printf("Your new score is %d.\n", newScore)
 			}
