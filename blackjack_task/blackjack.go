@@ -37,7 +37,7 @@ func playRound(playingDeck []deck.Card) {
 		playerCards[i] = card
 	}
 	fmt.Println("Dealer card: ", dealerCards[0].ToStringRepresentation())
-	fmt.Println(fmt.Sprintf("Your cards: %s and %s", playerCards[0].ToStringRepresentation(), playerCards[1].ToStringRepresentation()))
+	fmt.Printf("Your cards: %s and %s\n", playerCards[0].ToStringRepresentation(), playerCards[1].ToStringRepresentation())
 	playingDeck, playerCards, playerOverdraw := playerTurn(playingDeck, playerCards)
 	playingDeck, dealerCards, dealerOverdraw := dealerTurn(playingDeck, dealerCards)
 	playerScore := countScore(playerCards)
@@ -76,10 +76,8 @@ func countScore(hand []deck.Card) int {
 			score += int(v.Value) + 1
 			continue
 		}
-		if v.Value >= deck.JACK {
-			score += 10
-			continue
-		}
+		score += 10
+		continue
 	}
 	if score > 10 {
 		score += aceCount
