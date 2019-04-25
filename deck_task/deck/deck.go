@@ -136,7 +136,7 @@ func New(args NewArguments) []Card {
 	return deck
 }
 
-//PullRandomCard pulls one card from deck. Returns updated deck and pulled card
+//PullRandomCard pulls one random card from deck. Returns updated deck and pulled card
 func PullRandomCard(deck []Card) ([]Card, Card) {
 	cardNum := rand.Intn(len(deck) - 1)
 	pulledCard := deck[cardNum]
@@ -159,4 +159,20 @@ func PutCardBackInDeck(deck []Card, card Card) ([]Card, error) {
 	}
 	deck = append(deck, card)
 	return deck, nil
+}
+
+//Shuffle is a function that allows us to separately shuffle already existing deck. Returns shuffled deck
+func Shuffle(deck []Card) []Card {
+	rand.Shuffle(len(deck), func(i, j int) {
+		deck[i], deck[j] = deck[j], deck[i]
+	})
+	return deck
+}
+
+//PullFirstCard pulls one card from the top of the deck. Returns updated deck and pulled card
+func PullFirstCard(deck []Card) ([]Card, Card) {
+	pulledCard := deck[0]
+	updatedDeck := make([]Card, len(deck)-1)
+	copy(updatedDeck, deck[1:])
+	return updatedDeck, pulledCard
 }
