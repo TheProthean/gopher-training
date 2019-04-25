@@ -18,42 +18,42 @@ const (
 	//ACE Value: Ace
 	ACE Value = iota
 	//TWO Value: 2
-	TWO = iota
+	TWO
 	//THREE Value: 3
-	THREE = iota
+	THREE
 	//FOUR Value: 4
-	FOUR = iota
+	FOUR
 	//FIVE Value: 5
-	FIVE = iota
+	FIVE
 	//SIX Value: 6
-	SIX = iota
+	SIX
 	//SEVEN Value: 7
-	SEVEN = iota
+	SEVEN
 	//EIGHT Value: 8
-	EIGHT = iota
+	EIGHT
 	//NINE Value: 9
-	NINE = iota
+	NINE
 	//TEN Value: 10
-	TEN = iota
+	TEN
 	//JACK Value: Jack
-	JACK = iota
+	JACK
 	//QUEEN Value: Queen
-	QUEEN = iota
+	QUEEN
 	//KING Value: King
-	KING = iota
+	KING
 	//JOKER Value: Joker
-	JOKER = iota
+	JOKER
 )
 
 const (
 	//HEARTS Suit: Heart
 	HEARTS Suit = iota
 	//CLUBS Suit: Club
-	CLUBS = iota
+	CLUBS
 	//DIAMONDS Suit: Diamond
-	DIAMONDS = iota
+	DIAMONDS
 	//SPADES Suit: Spade
-	SPADES = iota
+	SPADES
 )
 
 var valueNamesMap = map[Value]string{
