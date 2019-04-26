@@ -161,6 +161,12 @@ func PutCardBackInDeck(deck []Card, card Card) ([]Card, error) {
 	return deck, nil
 }
 
+//PutCardBackInDeckUnsafe is an unsafe variant of function above. Use it when deck consists of multiple decks.
+func PutCardBackInDeckUnsafe(deck []Card, card Card) []Card {
+	deck = append(deck, card)
+	return deck
+}
+
 //Shuffle is a function that allows us to separately shuffle already existing deck. Returns shuffled deck
 func Shuffle(deck []Card) []Card {
 	rand.Shuffle(len(deck), func(i, j int) {
