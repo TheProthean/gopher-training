@@ -6,20 +6,6 @@ import (
 	"github.com/gopher-training/deck_task/deck"
 )
 
-//AIDecision is a secured type for our AIs decisions generalization
-type AIDecision int
-
-const (
-	//HIT will be counted as if AI wants a hit
-	HIT AIDecision = iota
-	//STAND will be counted as if AI wants to stop hitting
-	STAND
-	//SPLIT will be counted as if AI wants to split his cards
-	SPLIT
-	//DOUBLEDOWN will be counted as if AI wants to take a doubledown option
-	DOUBLEDOWN
-)
-
 //GameOptions is a struct that stores game settings.
 //WARNING: AI should have at least 10 cash at the start of the game
 //WARNING: card amount should exceed number of AIs * 2 + 2 at least by 40
@@ -30,23 +16,21 @@ type GameOptions struct {
 	InitialCash  int
 }
 
-//AI is our AI interface, that will be playing our game
-type AI interface {
-	//This function should return one of 4 AIDecision values
-	//It should return SPLIT or DOUBLEDOWN ONLY when flag is TRUE, otherwise the game will end immediatly
-	MakeDecision(state RoundState, expandedOptions bool) AIDecision
-	//This function should return amount of cash, that AI wants to bet
-	//If it is more, than what AI has, AI will bet all his cash
-	//AI should bet at least 10 cash, if he has less than 10 cash the game stops
-	BetCash(AICash int) int
-}
-
 //RoundState is a struct, that shows AI state of the game, when it's supposed to make a decision
 type RoundState struct {
-	AICards        []deck.Card
-	DumbAiCards    [][]deck.Card
-	DealerCard     deck.Card
-	allDealerCards []deck.Card
+	AIBet             int
+	AICards           []deck.Card
+	OtherPlayersCards [][]deck.Card
+	DealerCard        deck.Card
+	allDealerCards    []deck.Card
+}
+
+//RoundResult is a struct where stats per Round of our AI are stored
+type RoundResult struct {
+	IsAWinOrDraw bool
+	CashDiff     int
+	AIScore      int
+	DealerScore  int
 }
 
 //Game is our game, that our AI or Player will be playing.
@@ -61,9 +45,9 @@ type Game struct {
 //Results is a storage of our AI stats
 type Results struct {
 	TotalRoundsPlayed int
+	TotalRoundsWon    int
 	TotalCash         int
-	Losses            []struct{ int int }
-	Wins              []struct{ int int }
+	RoundResults      []RoundResult
 }
 
 //Play is a main function of our Game struct, that starts the game
@@ -84,6 +68,13 @@ func (g *Game) Play(smartass AI) {
 func (g *Game) playRound(smartass AI) {
 	g.gameDeck = deck.Shuffle(g.gameDeck)
 	bettedCash := smartass.BetCash(g.AIResults.TotalCash)
+	if bettedCash > g.AIResults.TotalCash {
+		bettedCash = g.AIResults.TotalCash
+	}
+	if bettedCash%10 != 0 {
+		bettedCash -= bettedCash % 10
+	}
+	g.AIResults.TotalCash -= bettedCash
 	var card deck.Card
 	dealerCards := make([]deck.Card, 2)
 	aiCards := make([]deck.Card, 2)
@@ -103,41 +94,70 @@ func (g *Game) playRound(smartass AI) {
 		dealerCards[i] = card
 	}
 	g.currentState = RoundState{
-		AICards:        aiCards,
-		DumbAiCards:    dumbAIsCards,
-		DealerCard:     dealerCards[0],
-		allDealerCards: dealerCards,
+		AIBet:             bettedCash,
+		AICards:           aiCards,
+		OtherPlayersCards: dumbAIsCards,
+		DealerCard:        dealerCards[0],
+		allDealerCards:    dealerCards,
 	}
+	for i := 0; i < g.dumbAINumber; i++ {
+		g.dumbAITurn(i)
+	}
+	AINatural := g.aiTurn(smartass)
+	dealerNatural := g.dealerTurn()
+	g.roundResults(AINatural, dealerNatural)
 }
 
 func (g *Game) dealerTurn() bool {
 	dealerScore := CountScore(g.currentState.allDealerCards)
-	overdraw := false
+	if dealerScore == 21 {
+		return true
+	}
 	var card deck.Card
 	for dealerNeedDraw(dealerScore, g.currentState.allDealerCards) {
 		g.gameDeck, card = deck.PullFirstCard(g.gameDeck)
 		g.currentState.allDealerCards = append(g.currentState.allDealerCards, card)
 		dealerScore = CountScore(g.currentState.allDealerCards)
 	}
-	if dealerScore > 21 {
-		overdraw = true
-	}
-	return overdraw
+	return false
 }
 
 func (g *Game) dumbAITurn(dumbAIID int) {
-	AIScore := CountScore(g.currentState.DumbAiCards[dumbAIID])
+	AIScore := CountScore(g.currentState.OtherPlayersCards[dumbAIID])
 	var card deck.Card
-	for AIScore <= 12 {
+	for AIScore <= 14 {
 		g.gameDeck, card = deck.PullFirstCard(g.gameDeck)
-		g.currentState.DumbAiCards[dumbAIID] = append(g.currentState.DumbAiCards[dumbAIID], card)
-		AIScore = CountScore(g.currentState.DumbAiCards[dumbAIID])
+		g.currentState.OtherPlayersCards[dumbAIID] = append(g.currentState.OtherPlayersCards[dumbAIID], card)
+		AIScore = CountScore(g.currentState.OtherPlayersCards[dumbAIID])
 	}
 }
 
-func (g *Game) aiTurn(smartass AI) bool {
-	AIDecision := smartass.MakeDecision(g.currentState, true)
-	return false
+func (g *Game) roundResults(AINatural bool, dealerNatural bool) {
+	g.AIResults.TotalRoundsPlayed++
+	if AINatural && dealerNatural {
+		g.AIResults.TotalCash += g.currentState.AIBet
+		g.AIResults.RoundResults = append(g.AIResults.RoundResults, RoundResult{true, 0, 21, 21})
+	} else if AINatural {
+		g.AIResults.TotalCash += int(float64(g.currentState.AIBet) * 2.5)
+		g.AIResults.RoundResults = append(g.AIResults.RoundResults, RoundResult{true, int(float64(g.currentState.AIBet) * 1.5), 21, CountScore(g.currentState.allDealerCards)})
+		g.AIResults.TotalRoundsWon++
+	} else {
+		g.AIResults.RoundResults = append(g.AIResults.RoundResults, RoundResult{false, g.currentState.AIBet, CountScore(g.currentState.AICards), 21})
+	}
+	AIScore := CountScore(g.currentState.AICards)
+	dealerScore := CountScore(g.currentState.allDealerCards)
+	if AIScore > dealerScore {
+		g.AIResults.TotalCash += g.currentState.AIBet * 2
+		g.AIResults.RoundResults = append(g.AIResults.RoundResults, RoundResult{true, g.currentState.AIBet, AIScore, dealerScore})
+		g.AIResults.TotalRoundsWon++
+	}
+	if AIScore < dealerScore {
+		g.AIResults.RoundResults = append(g.AIResults.RoundResults, RoundResult{false, g.currentState.AIBet, AIScore, dealerScore})
+	}
+	if AIScore == dealerScore {
+		g.AIResults.TotalCash += g.currentState.AIBet
+		g.AIResults.RoundResults = append(g.AIResults.RoundResults, RoundResult{true, 0, AIScore, dealerScore})
+	}
 }
 
 func dealerNeedDraw(dealerScore int, dealerCards []deck.Card) bool {
@@ -152,7 +172,9 @@ func New(settings GameOptions) Game {
 	}
 	aires := Results{
 		TotalRoundsPlayed: 0,
+		TotalRoundsWon:    0,
 		TotalCash:         settings.InitialCash,
+		RoundResults:      []RoundResult{},
 	}
 	return Game{
 		gameDeck:     deck.New(deckArguments),
