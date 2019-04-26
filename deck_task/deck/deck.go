@@ -84,8 +84,8 @@ func (c Card) ToStringRepresentation() string {
 	return fmt.Sprintf("%s of %s", valueNamesMap[c.Value], suitNamesMap[c.Suit])
 }
 
-/*NewArguments is a struct to use as optional arguments container in our New function
-Be aware, that Shuffle argument overrides SortingFunc argument*/
+//NewArguments is a struct to use as optional arguments container in our New function
+//Be aware, that Shuffle argument overrides SortingFunc argument
 type NewArguments struct {
 	//Function that defines order of cards in new deck
 	SortingFunc func(i, j int) bool
@@ -101,9 +101,9 @@ type NewArguments struct {
 	DecksNumber int
 }
 
-/*New is our function for creating new deck of playing cards
-By default it is sorted in order: Suits - Hearts, Clubs, Diamonds, Spades
-								  Values - Ace, 2, 3, 4, 5, 6, 7, 8, 9, 10, Jack, Queen, King*/
+//New is our function for creating new deck of playing cards.
+//By default it is sorted in order: Suits - Hearts, Clubs, Diamonds, Spades;
+//Values - Ace, 2, 3, 4, 5, 6, 7, 8, 9, 10, Jack, Queen, King.
 func New(args NewArguments) []Card {
 	deck := []Card{}
 	if args.DecksNumber == 0 {
@@ -136,7 +136,7 @@ func New(args NewArguments) []Card {
 	return deck
 }
 
-//PullRandomCard pulls one random card from deck. Returns updated deck and pulled card
+//PullRandomCard pulls one random card from deck. Returns updated deck and pulled card.
 func PullRandomCard(deck []Card) ([]Card, Card) {
 	cardNum := rand.Intn(len(deck) - 1)
 	pulledCard := deck[cardNum]
@@ -146,8 +146,8 @@ func PullRandomCard(deck []Card) ([]Card, Card) {
 	return updatedDeck, pulledCard
 }
 
-/*PutCardBackInDeck puts card back into deck, checking that this card is not in the deck already
-Jokers though won't be put in the deck anyway, even if there is no jokers in the deck.*/
+//PutCardBackInDeck puts card back into deck, checking that this card is not in the deck already(so it is only for single deck).
+//Jokers though won't be put in the deck anyway, even if there is no jokers in the deck.
 func PutCardBackInDeck(deck []Card, card Card) ([]Card, error) {
 	if card.Value == JOKER {
 		return deck, errors.New("Can't put jokers in the deck. Create new deck if you want to use jokers.")
@@ -161,13 +161,13 @@ func PutCardBackInDeck(deck []Card, card Card) ([]Card, error) {
 	return deck, nil
 }
 
-//PutCardBackInDeckUnsafe is an unsafe variant of function above. Use it when deck consists of multiple decks.
+//PutCardBackInDeckUnsafe is an unsafe variant of function PutCardBackInDeck. Use it when deck consists of multiple decks.
 func PutCardBackInDeckUnsafe(deck []Card, card Card) []Card {
 	deck = append(deck, card)
 	return deck
 }
 
-//Shuffle is a function that allows us to separately shuffle already existing deck. Returns shuffled deck
+//Shuffle is a function that allows us to separately shuffle already existing deck. Returns shuffled deck.
 func Shuffle(deck []Card) []Card {
 	rand.Shuffle(len(deck), func(i, j int) {
 		deck[i], deck[j] = deck[j], deck[i]
@@ -175,7 +175,7 @@ func Shuffle(deck []Card) []Card {
 	return deck
 }
 
-//PullFirstCard pulls one card from the top of the deck. Returns updated deck and pulled card
+//PullFirstCard pulls one card from the top of the deck. Returns updated deck and pulled card.
 func PullFirstCard(deck []Card) ([]Card, Card) {
 	pulledCard := deck[0]
 	updatedDeck := make([]Card, len(deck)-1)
