@@ -147,15 +147,30 @@ func (g *Game) roundResults(AINatural bool, dealerNatural bool) {
 	if AINatural && dealerNatural {
 		g.AIResults.TotalCash += g.currentState.AIBet
 		g.AIResults.RoundResults = append(g.AIResults.RoundResults, RoundResult{true, 0, 21, 21})
-	} else if AINatural {
+		return
+	}
+	if AINatural {
 		g.AIResults.TotalCash += int(float64(g.currentState.AIBet) * 2.5)
 		g.AIResults.RoundResults = append(g.AIResults.RoundResults, RoundResult{true, int(float64(g.currentState.AIBet) * 1.5), 21, CountScore(g.currentState.allDealerCards)})
 		g.AIResults.TotalRoundsWon++
-	} else {
+		return
+	}
+	if dealerNatural {
 		g.AIResults.RoundResults = append(g.AIResults.RoundResults, RoundResult{false, g.currentState.AIBet, CountScore(g.currentState.AICards), 21})
+		return
 	}
 	AIScore := CountScore(g.currentState.AICards)
 	dealerScore := CountScore(g.currentState.allDealerCards)
+	if AIScore > 21 {
+		g.AIResults.RoundResults = append(g.AIResults.RoundResults, RoundResult{false, g.currentState.AIBet, AIScore, dealerScore})
+		return
+	}
+	if dealerScore > 21 {
+		g.AIResults.TotalCash += g.currentState.AIBet
+		g.AIResults.RoundResults = append(g.AIResults.RoundResults, RoundResult{true, 0, 21, 21})
+		g.AIResults.TotalRoundsWon++
+		return
+	}
 	if AIScore > dealerScore {
 		g.AIResults.TotalCash += g.currentState.AIBet * 2
 		g.AIResults.RoundResults = append(g.AIResults.RoundResults, RoundResult{true, g.currentState.AIBet, AIScore, dealerScore})

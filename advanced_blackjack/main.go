@@ -57,7 +57,7 @@ func (ai *AI) BetCash(AICash int) int {
 
 func main() {
 	gameSettings := blackjack.GameOptions{
-		GameCount:    100,
+		GameCount:    20,
 		DeckCount:    3,
 		DumbAINumber: 2,
 		InitialCash:  300,
