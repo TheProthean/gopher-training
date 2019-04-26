@@ -58,6 +58,7 @@ func (g *Game) Play(smartass AI) {
 	}
 	if g.AIResults.TotalCash < 10 {
 		fmt.Println("This game cannot be played - AI should have at least 10 cash ")
+		return
 	}
 	for g.roundsLeft > 0 && g.AIResults.TotalCash >= 10 {
 		g.playRound(smartass)
@@ -67,6 +68,7 @@ func (g *Game) Play(smartass AI) {
 
 func (g *Game) playRound(smartass AI) {
 	g.gameDeck = deck.Shuffle(g.gameDeck)
+	//fmt.Print(g.gameDeck)
 	bettedCash := smartass.BetCash(g.AIResults.TotalCash)
 	if bettedCash > g.AIResults.TotalCash {
 		bettedCash = g.AIResults.TotalCash
@@ -74,17 +76,23 @@ func (g *Game) playRound(smartass AI) {
 	if bettedCash%10 != 0 {
 		bettedCash -= bettedCash % 10
 	}
+	if bettedCash == 0 {
+		bettedCash = 10
+	}
 	g.AIResults.TotalCash -= bettedCash
 	var card deck.Card
 	dealerCards := make([]deck.Card, 2)
 	aiCards := make([]deck.Card, 2)
 	dumbAIsCards := [][]deck.Card{}
+	//fmt.Println(g.dumbAINumber)
+	//fmt.Println(len(g.gameDeck))
 	for i := 0; i < 2; i++ {
 		for j := 0; j < g.dumbAINumber; j++ {
 			if i == 0 {
 				dumbAICards := make([]deck.Card, 2)
 				dumbAIsCards = append(dumbAIsCards, dumbAICards)
 			}
+			//fmt.Println(len(g.gameDeck))
 			g.gameDeck, card = deck.PullFirstCard(g.gameDeck)
 			dumbAIsCards[j][i] = card
 		}
@@ -106,6 +114,7 @@ func (g *Game) playRound(smartass AI) {
 	AINatural := g.aiTurn(smartass)
 	dealerNatural := g.dealerTurn()
 	g.roundResults(AINatural, dealerNatural)
+	g.putCardsBackInDeck()
 }
 
 func (g *Game) dealerTurn() bool {
@@ -134,6 +143,7 @@ func (g *Game) dumbAITurn(dumbAIID int) {
 
 func (g *Game) roundResults(AINatural bool, dealerNatural bool) {
 	g.AIResults.TotalRoundsPlayed++
+	g.roundsLeft--
 	if AINatural && dealerNatural {
 		g.AIResults.TotalCash += g.currentState.AIBet
 		g.AIResults.RoundResults = append(g.AIResults.RoundResults, RoundResult{true, 0, 21, 21})
@@ -158,6 +168,17 @@ func (g *Game) roundResults(AINatural bool, dealerNatural bool) {
 		g.AIResults.TotalCash += g.currentState.AIBet
 		g.AIResults.RoundResults = append(g.AIResults.RoundResults, RoundResult{true, 0, AIScore, dealerScore})
 	}
+}
+
+func (g *Game) putCardsBackInDeck() {
+	usedCards := []deck.Card{}
+	usedCards = append(usedCards, g.currentState.AICards...)
+	usedCards = append(usedCards, g.currentState.allDealerCards...)
+	dumbAIHands := len(g.currentState.OtherPlayersCards)
+	for i := 0; i < dumbAIHands; i++ {
+		usedCards = append(usedCards, g.currentState.OtherPlayersCards[i]...)
+	}
+	g.gameDeck = append(g.gameDeck, usedCards...)
 }
 
 func dealerNeedDraw(dealerScore int, dealerCards []deck.Card) bool {

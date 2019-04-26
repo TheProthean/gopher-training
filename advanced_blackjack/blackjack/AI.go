@@ -61,7 +61,9 @@ func (g *Game) aiTurn(smartass AI) bool {
 				fmt.Printf("Game has stopped - AI chose forbidden option.\nWhile not having 2 cards with the same value he chose to split.\n")
 				os.Exit(1)
 			}
-			//???
+			//Currently I replaced SPLIT with HIT, 'cause SPLIT demands very heavy deck and game manipulations, so I'm checking all other options first
+			g.gameDeck, card = deck.PullFirstCard(g.gameDeck)
+			g.currentState.AICards = append(g.currentState.AICards, card)
 			break
 		case DOUBLEDOWN:
 			AIScore = CountScore(g.currentState.AICards)
