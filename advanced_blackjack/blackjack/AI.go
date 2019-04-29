@@ -25,7 +25,7 @@ const (
 type AI interface {
 	//This function should return one of 4 AIDecision values
 	//It should return SPLIT or DOUBLEDOWN ONLY when flag is TRUE, otherwise the game will end immediatly
-	MakeDecision(state RoundState, expandedOptions bool) AIDecision
+	MakeDecision(state RoundState, AICash int, expandedOptions bool) AIDecision
 	//This function should return amount of cash, that AI wants to bet
 	//Bet amount should be divisible by 10, otherwise it will be floored to closest number divisible by 10
 	//If it is more, than what AI has, AI will bet all his cash
@@ -33,16 +33,23 @@ type AI interface {
 	BetCash(AICash int) int
 }
 
-func (g *Game) aiTurn(smartass AI) bool {
+func (g *Game) aiTurn(smartass AI, firstTurnExpanded bool) (bool, *Game) {
 	var card deck.Card
+	var splitHand []deck.Card
+	splitOccured := false
 	AIturn := true
-	firstIteration := true
+	firstIteration := firstTurnExpanded
 	AIScore := CountScore(g.currentState.AICards)
 	if AIScore == 21 {
-		return true
+		return true, nil
+	}
+	if len(g.currentState.AICards) == 1 && g.currentState.AICards[0].Value == deck.ACE {
+		g.gameDeck, card = deck.PullFirstCard(g.gameDeck)
+		g.currentState.AICards = append(g.currentState.AICards, card)
+		return false, nil
 	}
 	for AIturn {
-		AIDecision := smartass.MakeDecision(g.currentState, firstIteration)
+		AIDecision := smartass.MakeDecision(g.currentState, g.AIResults.TotalCash, firstIteration)
 		if (AIDecision == SPLIT || AIDecision == DOUBLEDOWN) && !firstIteration {
 			fmt.Printf("Game has stopped - AI chose forbidden option.\nHe chose to split or to doubledown when it was not allowed.\n")
 			os.Exit(1)
@@ -61,9 +68,14 @@ func (g *Game) aiTurn(smartass AI) bool {
 				fmt.Printf("Game has stopped - AI chose forbidden option.\nWhile not having 2 cards with the same value he chose to split.\n")
 				os.Exit(1)
 			}
-			//Currently I replaced SPLIT with HIT, 'cause SPLIT demands very heavy deck and game manipulations, so I'm checking all other options first
-			g.gameDeck, card = deck.PullFirstCard(g.gameDeck)
-			g.currentState.AICards = append(g.currentState.AICards, card)
+			if g.AIResults.TotalCash < g.currentState.AIBet {
+				fmt.Printf("Game has stopped - AI chose forbidden option.\nWith total cash of %d and bet of %d he chose to split.\n", g.AIResults.TotalCash, g.currentState.AIBet)
+				os.Exit(1)
+			}
+			g.AIResults.TotalCash -= g.currentState.AIBet
+			splitOccured = true
+			splitHand = []deck.Card{g.currentState.AICards[1]}
+			g.currentState.AICards = []deck.Card{g.currentState.AICards[0]}
 			break
 		case DOUBLEDOWN:
 			AIScore = CountScore(g.currentState.AICards)
@@ -71,6 +83,11 @@ func (g *Game) aiTurn(smartass AI) bool {
 				fmt.Printf("Game has stopped - AI chose forbidden option.\nWith a score of %d he chose to doubledown.\n", AIScore)
 				os.Exit(1)
 			}
+			if g.AIResults.TotalCash < g.currentState.AIBet {
+				fmt.Printf("Game has stopped - AI chose forbidden option.\nWith total cash of %d and bet of %d he chose to doubledown.\n", g.AIResults.TotalCash, g.currentState.AIBet)
+				os.Exit(1)
+			}
+			g.AIResults.TotalCash -= g.currentState.AIBet
 			g.currentState.AIBet *= 2
 			g.gameDeck, card = deck.PullFirstCard(g.gameDeck)
 			g.currentState.AICards = append(g.currentState.AICards, card)
@@ -78,5 +95,26 @@ func (g *Game) aiTurn(smartass AI) bool {
 			break
 		}
 	}
-	return false
+	if splitOccured {
+		splitResult := Results{
+			TotalRoundsPlayed: 0,
+			TotalRoundsWon:    0,
+			TotalCash:         0,
+			RoundResults:      []RoundResult{},
+		}
+		splitRoundState := RoundState{
+			AIBet:             g.currentState.AIBet,
+			AICards:           splitHand,
+			OtherPlayersCards: append(g.currentState.OtherPlayersCards, g.currentState.AICards),
+			DealerCard:        g.currentState.DealerCard,
+			allDealerCards:    g.currentState.allDealerCards,
+		}
+		splitGame := Game{
+			gameDeck:     g.gameDeck,
+			currentState: splitRoundState,
+			AIResults:    splitResult,
+		}
+		return false, &splitGame
+	}
+	return false, nil
 }

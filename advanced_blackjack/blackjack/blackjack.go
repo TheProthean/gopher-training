@@ -28,6 +28,7 @@ type RoundState struct {
 //RoundResult is a struct where stats per Round of our AI are stored
 type RoundResult struct {
 	IsAWinOrDraw bool
+	WasASplit    bool
 	CashDiff     int
 	AIScore      int
 	DealerScore  int
@@ -63,12 +64,12 @@ func (g *Game) Play(smartass AI) {
 	for g.roundsLeft > 0 && g.AIResults.TotalCash >= 10 {
 		g.playRound(smartass)
 	}
+	fmt.Println(len(g.gameDeck))
 	fmt.Println("The game has concluded.")
 }
 
 func (g *Game) playRound(smartass AI) {
 	g.gameDeck = deck.Shuffle(g.gameDeck)
-	//fmt.Print(g.gameDeck)
 	bettedCash := smartass.BetCash(g.AIResults.TotalCash)
 	if bettedCash > g.AIResults.TotalCash {
 		bettedCash = g.AIResults.TotalCash
@@ -84,15 +85,12 @@ func (g *Game) playRound(smartass AI) {
 	dealerCards := make([]deck.Card, 2)
 	aiCards := make([]deck.Card, 2)
 	dumbAIsCards := [][]deck.Card{}
-	//fmt.Println(g.dumbAINumber)
-	//fmt.Println(len(g.gameDeck))
 	for i := 0; i < 2; i++ {
 		for j := 0; j < g.dumbAINumber; j++ {
 			if i == 0 {
 				dumbAICards := make([]deck.Card, 2)
 				dumbAIsCards = append(dumbAIsCards, dumbAICards)
 			}
-			//fmt.Println(len(g.gameDeck))
 			g.gameDeck, card = deck.PullFirstCard(g.gameDeck)
 			dumbAIsCards[j][i] = card
 		}
@@ -111,10 +109,29 @@ func (g *Game) playRound(smartass AI) {
 	for i := 0; i < g.dumbAINumber; i++ {
 		g.dumbAITurn(i)
 	}
-	AINatural := g.aiTurn(smartass)
+	AINatural, splitGame := g.aiTurn(smartass, true)
+	if splitGame != nil {
+		splitGame.aiTurn(smartass, false)
+		g.gameDeck = splitGame.gameDeck
+	}
 	dealerNatural := g.dealerTurn()
-	g.roundResults(AINatural, dealerNatural)
-	g.putCardsBackInDeck()
+	if splitGame != nil {
+		splitGame.currentState.allDealerCards = g.currentState.allDealerCards
+		splitGame.gameDeck = g.gameDeck
+	}
+	if splitGame != nil {
+		g.roundResults(AINatural, dealerNatural, true)
+		splitGame.roundResults(false, dealerNatural, true)
+		splitGame.putCardsBackInDeck()
+		g.gameDeck = splitGame.gameDeck
+		g.AIResults.TotalRoundsWon += splitGame.AIResults.TotalRoundsWon
+		g.AIResults.TotalRoundsPlayed += splitGame.AIResults.TotalRoundsPlayed
+		g.AIResults.TotalCash += splitGame.AIResults.TotalCash
+		g.AIResults.RoundResults = append(g.AIResults.RoundResults, splitGame.AIResults.RoundResults...)
+	} else {
+		g.roundResults(AINatural, dealerNatural, false)
+		g.putCardsBackInDeck()
+	}
 }
 
 func (g *Game) dealerTurn() bool {
@@ -141,47 +158,47 @@ func (g *Game) dumbAITurn(dumbAIID int) {
 	}
 }
 
-func (g *Game) roundResults(AINatural bool, dealerNatural bool) {
+func (g *Game) roundResults(AINatural bool, dealerNatural bool, wasSplit bool) {
 	g.AIResults.TotalRoundsPlayed++
 	g.roundsLeft--
 	if AINatural && dealerNatural {
 		g.AIResults.TotalCash += g.currentState.AIBet
-		g.AIResults.RoundResults = append(g.AIResults.RoundResults, RoundResult{true, 0, 21, 21})
+		g.AIResults.RoundResults = append(g.AIResults.RoundResults, RoundResult{true, wasSplit, 0, 21, 21})
 		return
 	}
 	if AINatural {
 		g.AIResults.TotalCash += int(float64(g.currentState.AIBet) * 2.5)
-		g.AIResults.RoundResults = append(g.AIResults.RoundResults, RoundResult{true, int(float64(g.currentState.AIBet) * 1.5), 21, CountScore(g.currentState.allDealerCards)})
+		g.AIResults.RoundResults = append(g.AIResults.RoundResults, RoundResult{true, wasSplit, int(float64(g.currentState.AIBet) * 1.5), 21, CountScore(g.currentState.allDealerCards)})
 		g.AIResults.TotalRoundsWon++
 		return
 	}
 	if dealerNatural {
-		g.AIResults.RoundResults = append(g.AIResults.RoundResults, RoundResult{false, g.currentState.AIBet, CountScore(g.currentState.AICards), 21})
+		g.AIResults.RoundResults = append(g.AIResults.RoundResults, RoundResult{false, wasSplit, g.currentState.AIBet, CountScore(g.currentState.AICards), 21})
 		return
 	}
 	AIScore := CountScore(g.currentState.AICards)
 	dealerScore := CountScore(g.currentState.allDealerCards)
 	if AIScore > 21 {
-		g.AIResults.RoundResults = append(g.AIResults.RoundResults, RoundResult{false, g.currentState.AIBet, AIScore, dealerScore})
+		g.AIResults.RoundResults = append(g.AIResults.RoundResults, RoundResult{false, wasSplit, g.currentState.AIBet, AIScore, dealerScore})
 		return
 	}
 	if dealerScore > 21 {
 		g.AIResults.TotalCash += g.currentState.AIBet
-		g.AIResults.RoundResults = append(g.AIResults.RoundResults, RoundResult{true, 0, 21, 21})
+		g.AIResults.RoundResults = append(g.AIResults.RoundResults, RoundResult{true, wasSplit, 0, 21, 21})
 		g.AIResults.TotalRoundsWon++
 		return
 	}
 	if AIScore > dealerScore {
 		g.AIResults.TotalCash += g.currentState.AIBet * 2
-		g.AIResults.RoundResults = append(g.AIResults.RoundResults, RoundResult{true, g.currentState.AIBet, AIScore, dealerScore})
+		g.AIResults.RoundResults = append(g.AIResults.RoundResults, RoundResult{true, wasSplit, g.currentState.AIBet, AIScore, dealerScore})
 		g.AIResults.TotalRoundsWon++
 	}
 	if AIScore < dealerScore {
-		g.AIResults.RoundResults = append(g.AIResults.RoundResults, RoundResult{false, g.currentState.AIBet, AIScore, dealerScore})
+		g.AIResults.RoundResults = append(g.AIResults.RoundResults, RoundResult{false, wasSplit, g.currentState.AIBet, AIScore, dealerScore})
 	}
 	if AIScore == dealerScore {
 		g.AIResults.TotalCash += g.currentState.AIBet
-		g.AIResults.RoundResults = append(g.AIResults.RoundResults, RoundResult{true, 0, AIScore, dealerScore})
+		g.AIResults.RoundResults = append(g.AIResults.RoundResults, RoundResult{true, wasSplit, 0, AIScore, dealerScore})
 	}
 }
 
